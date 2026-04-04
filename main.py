@@ -1,75 +1,55 @@
 import streamlit as st
+from groq import Groq
 
-# --- CONFIGURATION DU SITE ---
-st.set_page_config(page_title="NEXA - Google Auth", page_icon="🌐")
+# 1. Configuration de l'interface Premium
+st.set_page_config(page_title="NEXA PREMIUM", page_icon="🌐", layout="centered")
 
-# --- SYSTÈME D'ABONNEMENT GOOGLE (SIMULATION) ---
-# En attendant ta configuration Google Cloud, voici le verrou professionnel
-if "google_user" not in st.session_state:
-    st.session_state.google_user = None
+# Style pour un look sombre et pro
+st.markdown("""
+    <style>
+    .stApp { background-color: #0e1117; color: white; }
+    </style>
+    """, unsafe_allow_html=True)
 
-if not st.session_state.google_user:
-    st.title("🌐 NEXA GLOBAL SYSTEM")
-    st.subheader("Connexion Sécurisée")
-    st.write("Veuillez vous connecter avec votre compte Google pour accéder à l'IA.")
-    
-    if st.button("🚀 Se connecter avec Google"):
-        # Ici, on simule la validation du compte Google
-        st.session_state.google_user = "Utilisateur Google" 
-        st.success("Connexion réussie !")
-        st.rerun()
-    st.stop()
-
-# --- BASE DE CONNAISSANCES NEXA ---
-CONNAISSANCES = {
-    "bonjour": "Bonjour ! Bienvenue sur votre compte NEXA Premium.",
-    "pdg": "Mon créateur et PDG est Guerrier Karl Alejandro.",
-    "créé": "J'ai été conçu par Alejandro avec l'aide technologique de Gemini.",
-    "maths": "Je maîtrise l'algèbre et la géométrie pour tes examens.",
-    "pays": "Je connais tous les pays, leurs capitales et leur histoire.",
-    "gemini": "Gemini est l'IA qui assiste Alejandro pour mon développement technique.",
-    
-    # INFOS SUR LA MISE À JOUR DE JUILLET
-    "mise à jour": "⚠️ ALERTE : La grande mise à jour de NEXA arrive en JUILLET 2026 avec des fonctions de résolution de problèmes encore plus puissantes !",
-    "juillet": "Juillet 2026 sera le mois de la révolution pour NEXA et le mois de vos examens d'État.",
-    "examen": "Tes examens d'État sont du 6 au 8 juillet 2026. Prépare-toi avec NEXA !"
-}
-
-# --- INTERFACE UNE FOIS CONNECTÉ ---
 st.title("🌐 NEXA PREMIUM")
-st.info(f"👤 Connecté via Google | Prochaine mise à jour : *Juillet 2026*")
+st.caption("Intelligence Artificielle Connectée | Propriété du PDG Alejandro")
+st.write("---")
 
+# 2. TA CLÉ API GROQ (Le moteur de réponse)
+client = Groq(api_key="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")
+
+# 3. Gestion de la mémoire de l'IA (Historique)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Affichage du chat
+# Affichage des anciens messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-prompt = st.chat_input("Posez une question à NEXA...")
-
-if prompt:
+# 4. Zone de saisie (Comme Google)
+if prompt := st.chat_input("Posez votre question à NEXA..."):
+    # On mémorise ton message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Réponse intelligente via les serveurs Groq
     with st.chat_message("assistant"):
-        question = prompt.lower().strip()
-        reponse = "C'est un sujet intéressant. Mon PDG Alejandro prépare une réponse pour la mise à jour de juillet."
-        
-        for mot, texte in CONNAISSANCES.items():
-            if mot in question:
-                reponse = texte
-                break
-        
-        st.markdown(reponse)
-        st.session_state.messages.append({"role": "assistant", "content": reponse})
-
-# --- SIDEBAR ---
-st.sidebar.title("⚙️ PARAMÈTRES")
-st.sidebar.write(f"Utilisateur : *{st.session_state.google_user}*")
-st.sidebar.warning("📅 Mise à jour : Juillet 2026")
-if st.sidebar.button("Déconnexion"):
-    st.session_state.google_user = None
-    st.rerun()
+        try:
+            # On envoie la question au modèle Llama 3
+            completion = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "Tu es NEXA PREMIUM, une IA surpuissante créée par le PDG Alejandro, un jeune entrepreneur de 15 ans en Haïti. Tu es experte en Mathématiques, Business, et Technologie. Tu réponds de manière intelligente, rapide et polie en Français ou en Créole."
+                    },
+                    *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+                ],
+            )
+            response = completion.choices[0].message.content
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+        except Exception as e:
+            st.error(f"Erreur de connexion aux serveurs : {e}")
