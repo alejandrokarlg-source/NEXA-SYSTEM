@@ -39,7 +39,7 @@ if prompt := st.chat_input("Posez votre question à NEXA..."):
         try:
             # On envoie la question au modèle Llama 3
             completion = client.chat.completions.create(
-                model="gemma2-9b-it",
+               model="llama-3.3-70b-versatile",
                 messages=[
                     {
                         "role": "system", 
